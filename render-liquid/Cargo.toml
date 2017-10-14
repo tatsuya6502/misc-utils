@@ -1,0 +1,9 @@
+[package]
+name = "rendar-liquid"
+version = "0.1.0"
+authors = ["Tatsuya Kawano <tatsuya@hibaridb.org>"]
+
+[dependencies]
+clap = "2.26.2"
+liquid = "0.10"
+toml = "0.4"

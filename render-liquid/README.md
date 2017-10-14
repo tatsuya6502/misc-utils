@@ -78,6 +78,8 @@ $ docker build -t render-liquid docker/
 
 The Dockerfile can be found [here](./docker/Dockerfile).
 
+NOTE: Require Rust version: 1.18.0 or newer.
+
 
 ## Dependencies
 

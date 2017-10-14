@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+{% if bool_val %}
+<values>
+  <bool_val>{{ bool_val }}</bool_val>
+  <int_val>{{ int_val }}</int_val>
+  <float_val>{{ float_val }}</float_val>
+  <string_val>{{ string_val }}</string_val>
+</values>
+{% else %}
+<values />
+{% endif %}

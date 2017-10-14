@@ -8,14 +8,16 @@ use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 
-struct CmdOptions<'a> {
-    template_path: &'a str,
-    values_path: Option<&'a str>,
-    output_path: Option<&'a str>,
+pub(crate) struct CmdOptions<'a> {
+    pub(crate) template_path: &'a str,
+    pub(crate) values_path: Option<&'a str>,
+    pub(crate) output_path: Option<&'a str>,
 }
 
+// *TODO*: Use error-chain crate. https://crates.io/crates/error-chain
+
 fn main() {
-    let clap_app = App::new("render-liquid")
+    let args = App::new("render-liquid")
         .version("0.1.0")
         .arg(Arg::with_name("TEMPLATE")
             .help("Liquid template file")
@@ -32,17 +34,19 @@ fn main() {
             .long("output")
             .value_name("OUTPUT")
             .help("Redirect the output to the file")
-            .takes_value(true));
+            .takes_value(true))
+        .get_matches();
 
-    match parse_and_render(clap_app) {
-        Ok(()) => (),
-        Err(e) => println!("Error: {}", e),
+    let result = parse_options(&args)
+        .and_then(|cmd_opts| parse_and_render(&cmd_opts));
+
+    if let Err(e) = result {
+        eprintln!("Error: {}", e);
+        std::process::exit(8);
     }
 }
 
-fn parse_and_render(clap_app: App) -> Result<(), String> {
-    let args = clap_app.get_matches();
-    let cmd_opts = parse_options(&args)?;
+pub(crate) fn parse_and_render(cmd_opts: &CmdOptions) -> Result<(), String> {
     let template = parse_template(&cmd_opts.template_path)?;
     let mut values = parse_values(&cmd_opts.values_path)?;
     render(&cmd_opts.output_path, &template, &mut values)
@@ -109,4 +113,76 @@ fn render(path: &Option<&str>, template: &liquid::Template, context: &mut Contex
         // io::stdout().flush().unwrap();
         Ok(())
     }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::{CmdOptions, parse_and_render};
+    use std::{env, fs};
+    use std::io::Read;
+
+    #[test]
+    fn hello_without_value() {
+        let mut out_path = env::temp_dir();
+        out_path.push("render-liquid-rendered-a.xml");
+        let _ignore = fs::remove_file(&out_path);
+
+        let cmd_opts = CmdOptions{
+            template_path: "test-data/template.xml",
+            values_path: Some("test-data/empty-values.toml"),
+            output_path: Some(out_path.to_str().unwrap()),
+        };
+        assert_eq!(Ok(()), parse_and_render(&cmd_opts));
+
+        let expected = r#"<?xml version="1.0" encoding="UTF-8" ?>
+
+<values />
+
+"#;
+
+        let mut output = String::new();
+        let _size = fs::File::open(&out_path)
+            .and_then(|mut f| f.read_to_string(&mut output))
+            .expect(&format!("Can't read from output file {:?}", out_path));
+
+        assert_eq!(expected, output);
+
+        let _ignore = fs::remove_file(&out_path);
+    }
+
+    #[test]
+    fn hello_with_values() {
+        let mut out_path = env::temp_dir();
+        out_path.push("render-liquid-rendered-b.xml");
+        let _ignore = fs::remove_file(&out_path);
+
+        let cmd_opts = CmdOptions{
+            template_path: "test-data/template.xml",
+            values_path: Some("test-data/values.toml"),
+            output_path: Some(out_path.to_str().unwrap()),
+        };
+        assert_eq!(Ok(()), parse_and_render(&cmd_opts));
+
+        let expected = r#"<?xml version="1.0" encoding="UTF-8" ?>
+
+<values>
+  <bool_val>true</bool_val>
+  <int_val>123</int_val>
+  <float_val>456.7</float_val>
+  <string_val>Hello</string_val>
+</values>
+
+"#;
+
+        let mut output = String::new();
+        let _size = fs::File::open(&out_path)
+            .and_then(|mut f| f.read_to_string(&mut output))
+            .expect(&format!("Can't read from output file {:?}", out_path));
+
+        assert_eq!(expected, output);
+
+        let _ignore = fs::remove_file(&out_path);
+    }
+
 }

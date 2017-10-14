@@ -12,7 +12,7 @@ XML based configuration files from a shell script.
 ```console
 # Use the Docker image containing the command. (It is only ~X MB)
 # This should run on Docker on Linux, macOS and Windows with Docker installed.
-$ alias render-liquid='docker run -i --rm quay.io/tatsuya6502/render-liquid'
+$ alias render-liquid='docker run -i --rm -v $(pwd):/files quay.io/tatsuya6502/render-liquid'
 
 # Create a template in Liquid.
 $ cat <<'EOF' > template.txt
@@ -23,11 +23,11 @@ $ cat <<'EOF' > template.txt
 {% endif %}
 EOF
 
-$ echo '' | render-liquid template.txt
+$ echo '' | render-liquid /files/template.txt
 
   Hello, world!
 
-$ echo 'user_name = "Tatsuya"' | render-liquid template.txt
+$ echo 'user_name = "Tatsuya"' | render-liquid /files/template.txt
 
   Hey Tatsuya!
 
@@ -73,10 +73,10 @@ welcome.
 You need Linux, macOS, or Windows with Docker installed.
 
 ```console
-$ docker build -t render-liquid docker/
+$ docker build -t render-liquid .
 ```
 
-The Dockerfile can be found [here](./docker/Dockerfile).
+The Dockerfile can be found [here](./Dockerfile).
 
 NOTE: Require Rust version: 1.18.0 or newer.
 

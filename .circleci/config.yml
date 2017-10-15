@@ -1,0 +1,24 @@
+version: 2
+
+jobs:
+    build:
+        docker:
+            - image: rust:1.21.0
+        steps:
+            - checkout
+            - run:
+                name: rustc version
+                command: rustc --version --verbose
+            - run:
+                name: cargo version
+                command: cargo --version --verbose
+            - restore_cache:
+                keys:
+                    - v1-cargo
+            - run:
+                name: Test render-liquid
+                command: cd render-liquid; cargo test
+            - save_cache:
+                key: v1-cargo
+                paths:
+                    - /usr/local/cargo

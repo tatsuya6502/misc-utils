@@ -14,31 +14,28 @@ pub(crate) struct CmdOptions<'a> {
     pub(crate) output_path: Option<&'a str>,
 }
 
-// *TODO*: Use error-chain crate. https://crates.io/crates/error-chain
-
 fn main() {
     let args = App::new("render-liquid")
         .version("0.1.0")
         .arg(Arg::with_name("TEMPLATE")
-            .help("Liquid template file")
-            .required(true)
-            .index(1))
+                .help("Liquid template file")
+                .required(true)
+                .index(1))
         .arg(Arg::with_name("values")
-            .short("t")
-            .long("toml")
-            .value_name("VALUES.toml")
-            .help("Set the TOML file containing values")
-            .takes_value(true))
+                .short("t")
+                .long("toml")
+                .value_name("VALUES.toml")
+                .help("Set the TOML file containing values")
+                .takes_value(true))
         .arg(Arg::with_name("output")
-            .short("o")
-            .long("output")
-            .value_name("OUTPUT")
-            .help("Redirect the output to the file")
-            .takes_value(true))
+                .short("o")
+                .long("output")
+                .value_name("OUTPUT")
+                .help("Redirect the output to the file")
+                .takes_value(true))
         .get_matches();
 
-    let result = parse_options(&args)
-        .and_then(|cmd_opts| parse_and_render(&cmd_opts));
+    let result = parse_options(&args).and_then(|cmd_opts| parse_and_render(&cmd_opts));
 
     if let Err(e) = result {
         eprintln!("Error: {}", e);
@@ -53,54 +50,84 @@ pub(crate) fn parse_and_render(cmd_opts: &CmdOptions) -> Result<(), String> {
 }
 
 fn parse_options<'a>(args: &'a ArgMatches) -> Result<CmdOptions<'a>, String> {
-    let template_path = args.value_of("TEMPLATE").ok_or("Can't get template")?;
+    let template_path = args.value_of("TEMPLATE").ok_or(
+        "Can't get template".to_string(),
+    )?;
     let values_path = args.value_of("values");
     let output_path = args.value_of("output");
 
-    let options = CmdOptions{ template_path, values_path, output_path };
+    let options = CmdOptions {
+        template_path,
+        values_path,
+        output_path,
+    };
     Ok(options)
 }
 
 fn parse_template(path: &str) -> Result<liquid::Template, String> {
-    liquid::parse_file(path, Default::default())
-        .map_err(|e| format!("Can't parse the template at {}. {}", path, e))
+    liquid::parse_file(path, Default::default()).map_err(|e| {
+        format!("Can't parse the template at {}. {}", path, e)
+    })
 }
 
 fn parse_values(path: &Option<&str>) -> Result<Context, String> {
     let mut values_toml = String::new();
     if let &Some(path) = path {
-        File::open(path).and_then(|mut f| f.read_to_string(&mut values_toml))
+        File::open(path)
+            .and_then(|mut f| f.read_to_string(&mut values_toml))
             .map_err(|e| format!("Can't read values from {}. {}", path, e))?;
     } else {
-        io::stdin().read_to_string(&mut values_toml)
-            .map_err(|e| format!("Can't read values from stdin. {}", e))?;
+        io::stdin().read_to_string(&mut values_toml).map_err(|e| {
+            format!("Can't read values from stdin. {}", e)
+        })?;
     }
 
-    let value = values_toml.parse::<toml::Value>()
-        .map_err(|e| format!("Can't parse TOML values. {}", e))?;
-    
+    let value = values_toml.parse::<toml::Value>().map_err(|e| {
+        format!("Can't parse TOML values. {}", e)
+    })?;
+
     match value.as_table() {
         Some(table) => {
             let mut context = Context::new();
             for (key, value) in table.iter() {
-                match value {
-                    &toml::Value::Integer(n) => context.set_val(key, liquid::Value::Num(n as f32)),
-                    &toml::Value::Float(f) => context.set_val(key, liquid::Value::Num(f as f32)),
-                    &toml::Value::Boolean(b) => context.set_val(key, liquid::Value::Bool(b)),
-                    &toml::Value::String(ref s) => context.set_val(key, liquid::Value::Str(s.to_string())),
-                    _ => unimplemented!(),
-                };
+                context.set_val(key, convert(value));
             }
             Ok(context)
         }
-        None => Err("Can't parse the top level item it the TOML file as table.".to_string())
+        None => Err(
+            "Can't parse the top level item in the TOML file as table.".to_string(),
+        ),
     }
 }
 
-fn render(path: &Option<&str>, template: &liquid::Template, context: &mut Context) -> Result<(), String> {
-    let rendered = template.render(context)
-        .map_err(|e| format!("Can't render the template. {}", e))?;
-    
+fn convert(toml: &toml::Value) -> liquid::Value {
+    match toml {
+        &toml::Value::Integer(i) => liquid::Value::Num(i as f32),
+        &toml::Value::Float(f) => liquid::Value::Num(f as f32),
+        &toml::Value::Boolean(b) => liquid::Value::Bool(b),
+        &toml::Value::String(ref s) => liquid::Value::Str(s.to_string()),
+        &toml::Value::Datetime(ref d) => liquid::Value::Str(d.to_string()),
+        &toml::Value::Array(ref arr) => liquid::Value::Array(
+            arr.into_iter().map(|v| convert(&v)).collect(),
+        ),
+        &toml::Value::Table(ref table) => liquid::Value::Object(
+            table
+                .into_iter()
+                .map(|(k, v)| (k.to_string(), convert(&v)))
+                .collect(),
+        ),
+    }
+}
+
+fn render(
+    path: &Option<&str>,
+    template: &liquid::Template,
+    context: &mut Context,
+) -> Result<(), String> {
+    let rendered = template.render(context).map_err(|e| {
+        format!("Can't render the template. {}", e)
+    })?;
+
     let rendered = rendered.ok_or_else(|| "Nothing to render".to_string())?;
 
     if let &Some(path) = path {
@@ -123,12 +150,12 @@ mod tests {
     use std::io::Read;
 
     #[test]
-    fn hello_without_value() {
+    fn gen_xml_without_values() {
         let mut out_path = env::temp_dir();
         out_path.push("render-liquid-rendered-a.xml");
         let _ignore = fs::remove_file(&out_path);
 
-        let cmd_opts = CmdOptions{
+        let cmd_opts = CmdOptions {
             template_path: "test-data/template.xml",
             values_path: Some("test-data/empty-values.toml"),
             output_path: Some(out_path.to_str().unwrap()),
@@ -152,12 +179,12 @@ mod tests {
     }
 
     #[test]
-    fn hello_with_values() {
+    fn gen_xml_with_values() {
         let mut out_path = env::temp_dir();
         out_path.push("render-liquid-rendered-b.xml");
         let _ignore = fs::remove_file(&out_path);
 
-        let cmd_opts = CmdOptions{
+        let cmd_opts = CmdOptions {
             template_path: "test-data/template.xml",
             values_path: Some("test-data/values.toml"),
             output_path: Some(out_path.to_str().unwrap()),
@@ -171,6 +198,13 @@ mod tests {
   <int_val>123</int_val>
   <float_val>456.7</float_val>
   <string_val>Hello</string_val>
+  <array_val>
+
+    <ip_addr>172.17.0.2</ip_addr>
+
+    <ip_addr>172.17.0.3</ip_addr>
+
+  </array_val>
 </values>
 
 "#;

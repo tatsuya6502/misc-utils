@@ -2,3 +2,4 @@ bool_val = true
 int_val = 123
 float_val = 456.7
 string_val = "Hello"
+array_val = ["172.17.0.2", "172.17.0.3"]

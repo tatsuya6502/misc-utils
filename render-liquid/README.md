@@ -53,21 +53,6 @@ ARGS:
 ```
 
 
-## Supported Data Types
-
-This command only supports the following data types in TOML.
-
-- String
-- Integer
-- Float
-- Boolean
-
-I have no plan to extend, but it will be easy to do so because other
-data types such as array are already supported in the crates
-(libraries) that this command depends on. Pull request will be always
-welcome.
-
-
 ## Building the Docker Image
 
 You need Linux, macOS, or Windows with Docker installed.

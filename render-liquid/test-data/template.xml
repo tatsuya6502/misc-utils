@@ -5,6 +5,11 @@
   <int_val>{{ int_val }}</int_val>
   <float_val>{{ float_val }}</float_val>
   <string_val>{{ string_val }}</string_val>
+  <array_val>
+{% for addr in array_val %}
+    <ip_addr>{{ addr }}</ip_addr>
+{% endfor %}
+  </array_val>
 </values>
 {% else %}
 <values />

@@ -1,4 +1,4 @@
-# tiny-utils [![CircleCI](https://circleci.com/gh/tatsuya6520/tiny-utils/tree/master.svg?style=svg)](https://circleci.com/gh/tatsuya6502/tiny-utils/tree/master)
+# tiny-utils [![CircleCI](https://circleci.com/gh/tatsuya6502/tiny-utils/tree/master.svg?style=svg)](https://circleci.com/gh/tatsuya6502/tiny-utils/tree/master)
 
 A collection of dead simple command line utility programs, mostly written in Rust
 

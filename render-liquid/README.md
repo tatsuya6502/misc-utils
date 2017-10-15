@@ -1,4 +1,4 @@
-# Render Liquid
+# Render Liquid [![CircleCI](https://circleci.com/gh/tatsuya6502/tiny-utils/tree/master.svg?style=svg)](https://circleci.com/gh/tatsuya6502/tiny-utils/tree/master)
 
 `render-liquid` command renders
 a [Liquid](https://shopify.github.io/liquid/) template with supplied

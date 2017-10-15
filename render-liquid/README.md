@@ -10,8 +10,8 @@ XML based configuration files from a shell script.
 ## Usage
 
 ```console
-# Use the Docker image containing the command. (It is only ~X MB)
-# This should run on Docker on Linux, macOS and Windows with Docker installed.
+# You can use the Docker image containing the command. (It is only ~2.5 MB)
+# This command should run on Linux, macOS and Windows with Docker installed.
 $ alias render-liquid='docker run -i --rm -v $(pwd):/files quay.io/tatsuya6502/render-liquid'
 
 # Create a template in Liquid.
